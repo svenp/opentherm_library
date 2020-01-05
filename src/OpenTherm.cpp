@@ -36,12 +36,12 @@ void OpenTherm::begin(void(*handleInterruptCallback)(void))
 	begin(handleInterruptCallback, NULL);	
 }
 
-bool ICACHE_RAM_ATTR OpenTherm::isReady()
+bool OpenTherm::isReady()
 {
 	return status == OpenThermStatus::READY;
 }
 
-int ICACHE_RAM_ATTR OpenTherm::readState() {
+int OpenTherm::readState() {
 	return digitalRead(inPin);
 }
 
@@ -93,7 +93,7 @@ bool OpenTherm::sendRequestAync(unsigned long request)
 
 unsigned long OpenTherm::sendRequest(unsigned long request)
 {	
-	if (!sendRequestAync(request)) return 0;
+  	if (!sendRequestAync(request)) return 0;
 	while (!isReady()) {
 		process();
 		yield();
@@ -122,7 +122,7 @@ OpenThermResponseStatus OpenTherm::getLastResponseStatus()
 	return responseStatus;
 }
 
-void ICACHE_RAM_ATTR OpenTherm::handleInterrupt()
+void OpenTherm::handleInterrupt()
 {	
     if (isReady())
     {
@@ -300,7 +300,11 @@ const char *OpenTherm::messageTypeToString(OpenThermMessageType message_type)
 
 unsigned long OpenTherm::buildSetBoilerStatusRequest(bool enableCentralHeating, bool enableHotWater, bool enableCooling, bool enableOutsideTemperatureCompensation, bool enableCentralHeating2) {
 	unsigned int data = enableCentralHeating | (enableHotWater << 1) | (enableCooling << 2) | (enableOutsideTemperatureCompensation << 3) | (enableCentralHeating2 << 4);
-	data <<= 8;	
+//Serial.println(highByte(data),BIN);
+//Serial.println(lowByte(data),BIN);	
+	data <<= 8;
+//Serial.println(highByte(data),BIN);
+//Serial.println(lowByte(data),BIN);	
 	return buildRequest(OpenThermMessageType::READ_DATA, OpenThermMessageID::Status, data);
 }
 
@@ -309,10 +313,63 @@ unsigned long OpenTherm::buildSetBoilerTemperatureRequest(float temperature) {
 	return buildRequest(OpenThermMessageType::WRITE_DATA, OpenThermMessageID::TSet, data);
 }
 
+
+unsigned long OpenTherm::buildSetDHWTemperatureRequest(float temperature) {
+	unsigned int data = temperatureToData(temperature);
+	return buildRequest(OpenThermMessageType::WRITE_DATA, OpenThermMessageID::TdhwSet, data);
+}
+
+unsigned long OpenTherm::buildGetDHWTemperatureRequest() {
+	return buildRequest(OpenThermMessageType::READ_DATA, OpenThermMessageID::Tdhw, 0);
+}
+
 unsigned long OpenTherm::buildGetBoilerTemperatureRequest() {
 	return buildRequest(OpenThermMessageType::READ_DATA, OpenThermMessageID::Tboiler, 0);
 }
 
+unsigned long OpenTherm::buildGetBoilerPressureRequest() {
+	return buildRequest(OpenThermMessageType::READ_DATA, OpenThermMessageID::CHPressure, 0);
+}
+
+unsigned long OpenTherm::buildGetDHWFlowRateRequest() {
+	return buildRequest(OpenThermMessageType::READ_DATA, OpenThermMessageID::DHWFlowRate, 0);
+}
+
+unsigned long OpenTherm::buildGetBoilerReturnTemperatureRequest() {
+	return buildRequest(OpenThermMessageType::READ_DATA, OpenThermMessageID::Tret, 0);
+}
+
+unsigned long OpenTherm::buildGetBoilerExhaustTemperatureRequest() {
+	return buildRequest(OpenThermMessageType::READ_DATA, OpenThermMessageID::Texhaust, 0);
+}
+
+unsigned long OpenTherm::buildGetCHBurnerStartsRequest() {
+	return buildRequest(OpenThermMessageType::READ_DATA, OpenThermMessageID::BurnerStarts, 0);
+}
+
+unsigned long OpenTherm::buildGetCHBurnerHoursRequest() {
+	return buildRequest(OpenThermMessageType::READ_DATA, OpenThermMessageID::BurnerOperationHours, 0);
+}
+
+unsigned long OpenTherm::buildGetDHWBurnerStartsRequest() {
+	return buildRequest(OpenThermMessageType::READ_DATA, OpenThermMessageID::DHWBurnerStarts, 0);
+}
+
+unsigned long OpenTherm::buildGetDHWBurnerHoursRequest() {
+	return buildRequest(OpenThermMessageType::READ_DATA, OpenThermMessageID::DHWBurnerOperationHours, 0);
+}
+
+unsigned long OpenTherm::buildGetDHWPumpHoursRequest() {
+	return buildRequest(OpenThermMessageType::READ_DATA, OpenThermMessageID::DHWPumpValveOperationHours, 0);
+}
+
+unsigned long OpenTherm::buildGetCHPumpHoursRequest() {
+	return buildRequest(OpenThermMessageType::READ_DATA, OpenThermMessageID::CHPumpOperationHours, 0);
+}
+
+unsigned long OpenTherm::buildGetOEMDiagnosticRequest() {
+	return buildRequest(OpenThermMessageType::READ_DATA, OpenThermMessageID::OEMDiagnosticCode, 0);
+}
 //parsing responses
 bool OpenTherm::isFault(unsigned long response) {
 	return response & 0x1;
@@ -354,6 +411,11 @@ float OpenTherm::getTemperature(unsigned long response) {
 	return temperature;
 }
 
+float OpenTherm::getHours(unsigned long response) {
+	float hours = isValidResponse(response) ? getFloat(response) : 0;
+	return hours;
+}
+
 unsigned int OpenTherm::temperatureToData(float temperature) {
 	if (temperature < 0) temperature = 0;
 	if (temperature > 100) temperature = 100;
@@ -372,7 +434,73 @@ bool OpenTherm::setBoilerTemperature(float temperature) {
 	return isValidResponse(response);
 }
 
+bool OpenTherm::setDHWTemperature(float temperature) {
+	unsigned long response = sendRequest(buildSetDHWTemperatureRequest(temperature));
+	return isValidResponse(response);
+}
+
 float OpenTherm::getBoilerTemperature() {
 	unsigned long response = sendRequest(buildGetBoilerTemperatureRequest());
 	return getTemperature(response);
 }
+
+float OpenTherm::getDHWTemperature() {
+	unsigned long response = sendRequest(buildGetDHWTemperatureRequest());
+	return getTemperature(response);
+}
+
+float OpenTherm::getBoilerPressure() {
+	unsigned long response = sendRequest(buildGetBoilerPressureRequest());
+	return getTemperature(response);
+}
+
+float OpenTherm::getDHWFlowRate() {
+	unsigned long response = sendRequest(buildGetDHWFlowRateRequest());
+	return getTemperature(response);
+}
+
+float OpenTherm::getBoilerReturnTemperature() {
+	unsigned long response = sendRequest(buildGetBoilerReturnTemperatureRequest());
+	return getTemperature(response);
+}
+
+float OpenTherm::getCHBurnerStarts() {
+	unsigned long response = sendRequest(buildGetCHBurnerStartsRequest());
+	return getHours(response);
+}
+
+float OpenTherm::getCHBurnerHours() {
+	unsigned long response = sendRequest(buildGetCHBurnerHoursRequest());
+	return getHours(response);
+}
+
+float OpenTherm::getDHWBurnerStarts() {
+	unsigned long response = sendRequest(buildGetDHWBurnerStartsRequest());
+	return getHours(response);
+}
+
+float OpenTherm::getDHWBurnerHours() {
+	unsigned long response = sendRequest(buildGetDHWBurnerHoursRequest());
+	return getHours(response);
+}
+
+float OpenTherm::getDHWPumpHours() {
+	unsigned long response = sendRequest(buildGetDHWPumpHoursRequest());
+	return getHours(response);
+}
+
+float OpenTherm::getCHPumpHours() {
+	unsigned long response = sendRequest(buildGetCHPumpHoursRequest());
+	return getHours(response);
+}
+
+float OpenTherm::getBoilerExhaustTemperature() {
+	unsigned long response = sendRequest(buildGetBoilerExhaustTemperatureRequest());
+	return getHours(response);
+}
+
+float OpenTherm::getOEMDiagnostic() {
+	unsigned long response = sendRequest(buildGetOEMDiagnosticRequest());
+	return getHours(response);
+}
+
