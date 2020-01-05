@@ -137,27 +137,40 @@ public:
 	void begin(void(*handleInterruptCallback)(void), void(*processResponseCallback)(unsigned long, OpenThermResponseStatus));
 	bool isReady();
 	unsigned long sendRequest(unsigned long request);
-    bool sendResponse(unsigned long request);
+        bool sendResponse(unsigned long request);
 	bool sendRequestAync(unsigned long request);
 	unsigned long buildRequest(OpenThermMessageType type, OpenThermMessageID id, unsigned int data);
-    unsigned long buildResponse(OpenThermMessageType type, OpenThermMessageID id, unsigned int data);
+        unsigned long buildResponse(OpenThermMessageType type, OpenThermMessageID id, unsigned int data);
 	OpenThermResponseStatus getLastResponseStatus();
 	const char *statusToString(OpenThermResponseStatus status);
 	void handleInterrupt();	
 	void process();
 	void end();
 
-    bool parity(unsigned long frame);
-	OpenThermMessageType getMessageType(unsigned long message);
-    OpenThermMessageID getDataID(unsigned long frame);
+        bool parity(unsigned long frame);
+   	OpenThermMessageType getMessageType(unsigned long message);
+        OpenThermMessageID getDataID(unsigned long frame);
 	const char *messageTypeToString(OpenThermMessageType message_type);
-    bool isValidRequest(unsigned long request);
-    bool isValidResponse(unsigned long response);
+        bool isValidRequest(unsigned long request);
+        bool isValidResponse(unsigned long response);
 
 	//requests
-	unsigned long buildSetBoilerStatusRequest(bool enableCentralHeating, bool enableHotWater = false, bool enableCooling = false, bool enableOutsideTemperatureCompensation = false, bool enableCentralHeating2 = false);
+	unsigned long buildSetBoilerStatusRequest(bool enableCentralHeating, bool enableHotWater, bool enableCooling = false, bool enableOutsideTemperatureCompensation = false, bool enableCentralHeating2 = false);
 	unsigned long buildSetBoilerTemperatureRequest(float temperature);
+	unsigned long buildSetDHWTemperatureRequest(float temperature);
+	unsigned long buildGetDHWTemperatureRequest();    
 	unsigned long buildGetBoilerTemperatureRequest();    
+	unsigned long buildGetBoilerPressureRequest(); 
+	unsigned long buildGetDHWFlowRateRequest(); 
+	unsigned long buildGetBoilerReturnTemperatureRequest(); 
+	unsigned long buildGetBoilerExhaustTemperatureRequest(); 
+	unsigned long buildGetCHBurnerStartsRequest(); 
+	unsigned long buildGetCHBurnerHoursRequest(); 
+	unsigned long buildGetDHWBurnerStartsRequest(); 
+	unsigned long buildGetDHWBurnerHoursRequest(); 
+	unsigned long buildGetDHWPumpHoursRequest(); 
+	unsigned long buildGetCHPumpHoursRequest(); 
+	unsigned long buildGetOEMDiagnosticRequest(); 
 
 	//responses    
 	bool isFault(unsigned long response);
@@ -167,18 +180,28 @@ public:
 	bool isCoolingActive(unsigned long response);
 	bool isDiagnostic(unsigned long response);
 	uint16_t getUInt(const unsigned long response) const;
+	float getHours(const unsigned long response);
 	float getFloat(const unsigned long response) const;
 	float getTemperature(unsigned long response);
 	unsigned int temperatureToData(float temperature);
 
 	//basic requests
-	unsigned long setBoilerStatus(bool enableCentralHeating, bool enableHotWater = false, bool enableCooling = false, bool enableOutsideTemperatureCompensation = false, bool enableCentralHeating2 = false);	
+	unsigned long setBoilerStatus(bool enableCentralHeating, bool enableHotWater, bool enableCooling = false, bool enableOutsideTemperatureCompensation = false, bool enableCentralHeating2 = false);	
 	bool setBoilerTemperature(float temperature);
+	bool setDHWTemperature(float temperature);
+	float getDHWTemperature();
 	float getBoilerTemperature();
+	float getBoilerPressure();
+	float getDHWFlowRate();
+	float getBoilerReturnTemperature();
+	float getBoilerExhaustTemperature();
+	float getCHBurnerStarts();
+	float getCHBurnerHours();
+	float getDHWBurnerStarts();
+	float getDHWBurnerHours();
+	float getDHWPumpHours();
+	float getCHPumpHours();
+	float getOEMDiagnostic();
 };
-
-#ifndef ICACHE_RAM_ATTR
-#define ICACHE_RAM_ATTR
-#endif
 
 #endif // OpenTherm_h
